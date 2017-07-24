@@ -1,5 +1,5 @@
 // Set the dimensions and margins of the diagram
-var margin = { top: 20, right: 30, bottom: 30, left: 20 },
+var margin = { top: 40, right: 40, bottom: 40, left: 40 },
     canvas = {
         width:  500 - margin.left - margin.right,
         height: 500 - margin.top  - margin.bottom,
@@ -8,6 +8,7 @@ var margin = { top: 20, right: 30, bottom: 30, left: 20 },
         clicks: 0,
         radius: 5,
         color: "red",
+        colorres: "green",
         factor: NaN
     };
 
@@ -36,11 +37,20 @@ function startload() {
 }
 
 
-//Add svg element to contain regress    
+//SVG for linear regression
 var svg = d3.select("#regress").append("svg")
     .attr("width", canvas.width + margin.left + margin.right)
     .attr("height", canvas.height + margin.top + margin.bottom)
-    .attr("id", "knnpoints")
+    .attr("id", "myregression")
+    .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+
+//SVG for residuals
+var svgres = d3.select("#residuals").append("svg")
+    .attr("width", canvas.width + margin.left + margin.right)
+    .attr("height", canvas.height + margin.top + margin.bottom)
+    .attr("id", "residuals")
     .append("g")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
@@ -49,17 +59,16 @@ var div = d3.select("body").append("div")
     .attr("class", "tooltip well")
     .style("opacity", 0);
 
-// Add tooltip
-var div2 = d3.select("body").append("div")
+/*var div2 = d3.select("body").append("div")
     .attr("class", "tooltip2 well")
     .style("opacity", 0);
 
 var div3 = d3.select("body").append("div")
     .attr("class", "tooltip2 well")
-    .style("opacity", 0);
+    .style("opacity", 0);*/
 
 //Function for drawing data
-function drawCanvas(data) {
+function drawCanvas(data, datares) {
 
     //Remove class
     removeElementsByClass("svgobject");
@@ -73,6 +82,12 @@ function drawCanvas(data) {
         .range([canvas.height, 0])
         .domain([canvas.min.y, canvas.max.y]);
 
+    var Rscale = d3.scaleLinear()
+        .range([0, canvas.width])
+        .domain([canvas.min.y, canvas.max.y]);
+
+
+    //Append to linear regression canvas
     svg.append("g")
         .attr("class", "x axis svgobject")
         .attr("transform", "translate(0," + Yscale(0) + ")")
@@ -83,10 +98,68 @@ function drawCanvas(data) {
         .attr("transform", "translate(" + Xscale(0) + ",0 )")
         .call(d3.axisLeft(Yscale));
 
-    //Plot points on data
+    svg.append("text")
+        .attr("x", (canvas.width / 2))             
+        .attr("y", 0 - (margin.top / 2))
+        .attr("text-anchor", "middle")  
+        .style("font-size", "16px") 
+        .text("Regresión lineal");
+
+    svg.append("text")             
+        .attr("transform",
+            "translate(" + (canvas.width/2) + " ," + 
+                            (canvas.height + margin.top/2) + ")")
+        .style("text-anchor", "middle")
+        .text("Y");
+
+    svg.append("text")             
+        .attr("transform",
+            "translate(" + (canvas.width + margin.left/2) + " ," + 
+                            (canvas.height/2) + ")")
+        .style("text-anchor", "middle")
+        .text("X");  
+
+    //Append to residuals regression canvas
+    svgres.append("g")
+        .attr("class", "x axis svgobject")
+        .attr("transform", "translate(0," + Yscale(0) + ")")
+        .call(d3.axisBottom(Rscale));
+
+    svgres.append("g")
+        .attr("class", "y axis svgobject")
+        .attr("transform", "translate(" + Rscale(0) + ",0 )")
+        .call(d3.axisLeft(Yscale));
+
+    svgres.append("text")
+        .attr("x", (canvas.width / 2))             
+        .attr("y", 0 - (margin.top / 2))
+        .attr("text-anchor", "middle")  
+        .style("font-size", "16px") 
+        .text("Residuales vs ajustados");
+    
+    svgres.append("text")             
+        .attr("transform",
+            "translate(" + (canvas.width/2) + " ," + 
+                            (canvas.height + margin.top/2) + ")")
+        .style("text-anchor", "middle")
+        .text("Y");
+
+    svgres.append("text")             
+        .attr("transform",
+            "translate(" + (canvas.width + margin.left/2) + " ," + 
+                            (canvas.height/2) + ")")
+        .style("text-anchor", "middle")
+        .text("Res");  
+
+    //Plot points on data for regression
     var figure = svg.selectAll("dot")
         .data(data)
         .enter().append("circle");
+
+    //Add line if more than 2 points
+    if(data.length >= 2){
+      drawline(data, Xscale, Yscale);
+    } 
 
     //Add attributes to plotted points
     figure.attr("cx", function(d) { return Xscale(d.x); })
@@ -109,10 +182,7 @@ function drawCanvas(data) {
             })
             .attr("r", canvas.radius);
 
-    //Add line if more than 2 points
-    if(data.length >= 2){
-      drawline(data, Xscale, Yscale);
-    } 
+ 
 
     //Add point on click
     svg.on("click", function(e) {
@@ -134,7 +204,7 @@ function drawCanvas(data) {
         });
 
         //Re-draw plot
-        drawCanvas(data);  
+        drawCanvas(data, datares);  
     });  
 
 };
@@ -163,6 +233,7 @@ function drawline(data,  Xscale, Yscale){
   .y(function(d) { return d.y; })
   .curve(d3.curveLinear);
   
+  //Append line
   svg.append('path')
      .attr("stroke-width", 2)
      .attr("class", "svgobject")
@@ -172,6 +243,19 @@ function drawline(data,  Xscale, Yscale){
                               {"x": Xscale(-lsCoef.a/lsCoef.b) , "y": Yscale(0)},
                               {"x": Xscale(canvas.max.x), "y": Yscale(lsCoef.a + lsCoef.b*canvas.max.x) }]));
 
+    //Plot residuals on data from regression
+    var figureresidualsvsfitted = svgres.selectAll("dot")
+        .data(data)
+        .enter().append("circle");    
+
+    //Add attributes to plotted points
+    figureresidualsvsfitted.attr("cx", function(d) { return Yscale(d.y); })
+            .attr("cy", function(d) { 
+                var residuals = d.y - (lsCoef.a + lsCoef.b*d.x);
+                return Yscale(residuals); })
+            .attr("class", "mydot svgobject")
+            .style("fill", canvas.colorres)
+            .attr("r", canvas.radius);        
 
 }
 
@@ -192,7 +276,6 @@ function LeastSquares(data) {
         }
 
        svals = sxsy(data, xbar, ybar);
-       
 
         var b = svals.Sxy/svals.Sxx;
         var a = ybar - b*xbar;

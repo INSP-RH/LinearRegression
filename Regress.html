@@ -25,25 +25,17 @@
 </head>
 
 <body>
-    <div id="fig1" class="panel panel-default">
+    <div id="fig1" class="panel panel-default" style = "width: 100%;">
         <div class="panel-heading" id="fig1title">
             <h2>Regresión lineal</h2>
+             <a class="btn btn-danger btn-xs" id="borrar">Restart</a>
         </div>
         <div class="panel-body">
             <div class="row">
-                <div class="form-group">
+                <div class="col-lg-6" id="regress" style="text-align:center;">
                 </div>
-                <div class="col-lg-9" id="regress" style="text-align:center;">
+                <div class="col-lg-6" id="residuals" style="text-align:center;">
                 </div>
-                <div class=" form-group col-lg-2 well" id="control" style="margin-top: 10%; text-align: left;">
-
-                    <div class="row" style="margin-top: 10px; text-align:center;">
-                        <a class="btn btn-danger btn-xs" id="borrar">Restart</a>
-                    </div>
-
-                </div>
-                <!--<div class="col-lg-9" id="residuals" style="text-align:center;">
-                </div>-->
                 <script src="script/Regress.js "></script>
             </div>
         </div>
